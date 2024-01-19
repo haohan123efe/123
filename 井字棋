@@ -1,0 +1,139 @@
+import { useState } from 'react';//从'react'库中导入useState 
+function Square({ value, onSquareClick }) {
+  //定义一个React函数组件，用于渲染方块的UI。该组件接受value和onSquareClick两个属性
+  //value 属性代表方块上显示的值。
+//onSquareClick 属性是一个函数，用于处理方块被点击时的事件。
+  return (
+    <button className="square" onClick={onSquareClick}>
+          {value}
+    </button>
+  );//呈现按钮
+}
+//这个组件创建一个可重复使用的方块UI，方块的外观和行为由外部传递的属性决定。
+function Board({ xIsNext, squares, onPlay }) {
+//定义Board组件，用于渲染9个方块形成的整体的ui，接受括号内的三个属性
+  function handleClick(i) {
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    //此函数在Board组件内部定义。接受被点击的方格的参数。检查是否已经有了获胜者，或者该方格已经被填充，有一条满足就会提前返回。
+    const nextSquares = squares.slice();
+    //用slice() 方法创建squares的数组的副本，并将其赋值给nextSquares
+    if (xIsNext) {
+      nextSquares[i] = 'X';
+    } else {
+      nextSquares[i] = 'O';
+    }
+    //判断当前玩家是否是x，来设置点击当前方块的值
+    onPlay(nextSquares);
+    //调用 onPlay函数
+  }
+  const winner = calculateWinner(squares);
+  //调用calculateWinner函数，返回当前获胜者，如果没有就是null
+  let status;
+  if (winner) {
+    status = 'Winner: ' + winner;
+  } else {
+    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
+  }
+  //判断当前是否有获胜者，有的话会显示获胜者，没有会显示下一步的玩家是谁
+  return (
+    <>
+      <div className="status">{status}</div>
+      <div className="board-row">
+        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
+        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
+        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
+      </div>
+      <div className="board-row">
+        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
+        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
+        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
+      </div>
+      <div className="board-row">
+        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
+        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
+        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
+      </div>
+    </>
+  );
+  //Board组件返回部分，渲染了游戏板的UI，status是游戏当前状态，三个div元素形成游戏板，每个div元素代表一行，。value属性表示方块上的值
+}
+
+export default function Game() {//定义文件主要组件
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  //用history这个数组来储存游戏历史记录，每个元素代表一个步骤
+  //setHistory是用于更新history状态的函数，通过调用它捞更新历史记录
+  const [currentMove, setCurrentMove] = useState(0);
+  //currentMobe表示当前游戏步数，setCurrentMove是用于更新步数的函数
+  const xIsNext = currentMove % 2 === 0;
+  //xIsNext根据currentMove来确定当前玩家。
+  const currentSquares = history[currentMove];
+  //是当前游戏板的状态，从history数组中获取当前步数对应的状态，用于渲染游戏界面。
+  function handlePlay(nextSquares) {//接受nextSquares参数，该参数是玩家选中的方块
+    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    setHistory(nextHistory);
+    setCurrentMove(nextHistory.length - 1);
+  }
+  //进行历史记录更新
+  function jumpTo(nextMove) {
+    setCurrentMove(nextMove);
+  }
+  //jumpTo 函数接收一个参数nextMove，这个参数是表示玩家希望跳转的步数。
+  //调用 setCurrentMove 函数，将当前步数更新为指定的 nextMove。
+  const moves = history.map((squares, move) => {
+    //使用map遍历方法history数组，生成一个新的数组moves，其中每个元素都包含了历史记录和按钮
+    let description;
+    if (move > 0) {
+      description = 'Go to move #' + move;
+    } else {
+      description = 'Go to game start';
+    }
+    //通过判断步数来确定游戏是否开始·
+    return (
+      <li key={move}>
+        <button onClick={() => jumpTo(move)}>{description}</button>
+      </li>
+    );
+    //使用key设置move为React元素的唯一标识，确保在渲染列表时React能够正确地识别和更新每个列表项。
+    //点击按钮时会触发onClick事件。通过()=>jumpTo(move)来指定点击按钮时调用jumpTo函数，并传递当前的move作为参数。
+    //{description}是按钮的文本内容
+  });
+
+  return (
+    <div className="game">
+      <div className="game-board">
+        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+      </div>
+      <div className="game-info">
+        <ol>{moves}</ol>
+      </div>
+    </div>
+  );
+  //是Game组件的最终返回部分，它包含了整个游戏的界面结构。
+}
+
+function calculateWinner(squares) {
+  //用于玩家是否获胜的组件
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  //是包含所有获胜可能的组合
+  for (let i = 0; i < lines.length; i++) {
+    //遍历所有可能的行
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      
+      return squares[a];
+    }
+    //检验所有方块选中玩家是否是同一个，如果是返回该玩家
+  }
+  return null;
+}
